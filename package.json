@@ -1,0 +1,22 @@
+{
+  "name": "three-clothing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "gsap": "^3.13.0",
+    "tailwindcss": "^4.1.17",
+    "three": "^0.181.0",
+    "troika-three-text": "^0.52.4",
+    "wiggle": "^0.0.17"
+  }
+}
