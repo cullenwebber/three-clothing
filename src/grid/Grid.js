@@ -31,10 +31,6 @@ class Grid {
 		// Damping
 		this.mathUtils = new MathUtils();
 		this.dampingLambda = 5; // Higher = faster response (try 5-20)
-
-		// Callbacks
-		this.onVelocityChange = null;
-		this.onGridUpdate = null;
 	}
 
 	init() {
@@ -159,9 +155,6 @@ class Grid {
 
 	updateGrid() {
 		this.renderer.updateVisibleCells(this.offsetX, this.offsetY);
-		if (this.onGridUpdate) {
-			this.onGridUpdate(this.renderer.visibleCells, this.offsetX, this.offsetY);
-		}
 	}
 }
 

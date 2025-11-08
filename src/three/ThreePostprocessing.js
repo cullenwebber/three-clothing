@@ -14,7 +14,9 @@ class ThreePostprocessing {
 		this.composer = new EffectComposer(this.renderer);
 
 		const renderPass = new RenderPass(scene, camera);
-		const barrelDistortionPass = new BarrelDistortionPass(0.8);
+		// For red and black chromatic aberration: pass red (0xff0000) and black (0x000000)
+		// Leave both as null for standard RGB chromatic aberration
+		const barrelDistortionPass = new BarrelDistortionPass(0.8, 0.02, 0xff0000, 0x000000);
 		const outputPass = new OutputPass();
 
 		this.composer.addPass(renderPass);

@@ -1,24 +1,23 @@
 import WiggleObj from "./WiggleObj.js";
-import GridTextTracker from "./GridTextTracker.js";
+import WebGLText from "./WebGLText.js";
+import BorderPlane from "./BorderPlane.js";
 
 class GridObject {
 	constructor(scene, camera, container) {
 		this.scene = scene;
 		this.camera = camera;
 		this.container = container;
-		this.wiggleObjects = new Map();
-		this.initialized = false;
 
-		// Initialize text tracker
-		this.textTracker = new GridTextTracker(
-			scene.getScene(),
-			camera.getCamera(),
-			container
-		);
+		// Track all grid items
+		this.wiggleObjects = new Map();
+		this.textInstances = new Map();
+		this.borderInstances = new Map();
+
+		this.initialised = false;
 	}
 
-	initialize() {
-		if (this.initialized) return;
+	initialise() {
+		if (this.initialised) return;
 
 		const cells = this.container.querySelectorAll("[data-cell-id]");
 
@@ -32,15 +31,14 @@ class GridObject {
 			});
 		}
 
-		this.initialized = true;
+		this.initialised = true;
 	}
 
-	updatePosition(cellId) {
+	updateWigglePosition(cellId) {
 		const tracked = this.wiggleObjects.get(cellId);
 		if (!tracked || !tracked.cellElement) return;
 
 		const rect = tracked.cellElement.getBoundingClientRect();
-		const containerRect = this.container.getBoundingClientRect();
 
 		// Calculate center position relative to viewport
 		const centerX = rect.left + rect.width / 2;
@@ -51,58 +49,92 @@ class GridObject {
 		const ndcY = -((centerY / window.innerHeight) * 2 - 1);
 
 		// Convert to world coordinates
-		const { width, height } = this.getFrustumDimensions();
+		const cam = this.camera.getCamera();
+		const distance = cam.position.z;
+		const fov = cam.fov * (Math.PI / 180);
+		const height = 2 * Math.tan(fov / 2) * distance;
+		const width = height * cam.aspect;
+
 		const worldX = ndcX * (width / 2);
 		const worldY = ndcY * (height / 2);
 
 		tracked.wiggleObj.setTargetPosition(worldX, worldY);
 	}
 
-	updateGridItems() {
-		// Initialize if needed
-		if (!this.initialized) {
-			this.initialize();
-		}
-
-		// Update positions for all cells
-		for (const cellId of this.wiggleObjects.keys()) {
-			this.updatePosition(cellId);
-		}
-	}
-
-	getFrustumDimensions() {
-		const cam = this.camera.getCamera();
-		const distance = cam.position.z;
-		const fov = cam.fov * (Math.PI / 180);
-		const height = 2 * Math.tan(fov / 2) * distance;
-		const width = height * cam.aspect;
-		return { width, height };
-	}
-
 	update() {
-		// Update positions and wiggle animations for all cells
+		if (!this.initialised) {
+			this.initialise();
+		}
+
+		// Update wiggle objects
 		for (const [cellId, tracked] of this.wiggleObjects.entries()) {
-			this.updatePosition(cellId);
+			this.updateWigglePosition(cellId);
 			tracked.wiggleObj.update();
 		}
 
-		// Update WebGL text tracking
-		this.textTracker.update();
+		// Update text and borders
+		this.updateTextAndBorders();
 	}
 
-	dispose() {
-		// Clean up text tracker
-		if (this.textTracker) {
-			this.textTracker.dispose();
-		}
+	updateTextAndBorders() {
+		// Update text
+		this.updateTrackedInstances(
+			".grid-item-text",
+			this.textInstances,
+			(element) =>
+				new WebGLText(
+					this.scene.getScene(),
+					this.camera.getCamera(),
+					element,
+					this.container,
+					{
+						hideOriginal: true,
+						zPosition: 0,
+					}
+				),
+			(instance) => instance.updateText()
+		);
 
-		// Clean up wiggle objects
-		for (const tracked of this.wiggleObjects.values()) {
-			if (tracked.wiggleObj && tracked.wiggleObj.dispose) {
-				tracked.wiggleObj.dispose();
+		// Update borders
+		this.updateTrackedInstances(
+			".grid-item",
+			this.borderInstances,
+			(element) =>
+				new BorderPlane(
+					this.scene.getScene(),
+					this.camera.getCamera(),
+					element,
+					this.container,
+					{
+						zPosition: 0,
+						borderWidth: 0.5,
+						borderColor: 0xbababa,
+					}
+				),
+			(instance) => instance.updatePosition()
+		);
+	}
+
+	updateTrackedInstances(selector, instanceMap, createFn, updateFn) {
+		const elements = this.container.querySelectorAll(selector);
+		const currentElements = new Set(elements);
+
+		// Create or update instances
+		elements.forEach((element) => {
+			if (!instanceMap.has(element)) {
+				instanceMap.set(element, createFn(element));
+			} else {
+				updateFn(instanceMap.get(element));
+			}
+		});
+
+		// Clean up removed instances
+		for (const [element, instance] of instanceMap.entries()) {
+			if (!currentElements.has(element)) {
+				instance.dispose();
+				instanceMap.delete(element);
 			}
 		}
-		this.wiggleObjects.clear();
 	}
 }
 

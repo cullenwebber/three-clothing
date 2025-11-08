@@ -33,12 +33,6 @@ class ThreeApp {
 		this.gridObject = new GridObject(this.scene, this.camera, gridContainer);
 	}
 
-	updateGridItems(visibleCells, offsetX, offsetY) {
-		if (this.gridObject) {
-			this.gridObject.updateGridItems(visibleCells);
-		}
-	}
-
 	resize() {
 		window.addEventListener("resize", () => {
 			this.camera.updateAspectRatio(window.innerWidth, window.innerHeight);

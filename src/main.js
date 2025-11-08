@@ -8,15 +8,8 @@ class App {
 	}
 
 	init() {
-		this.sync();
 		this.threeApp.init();
 		this.grid.init();
-	}
-
-	sync() {
-		this.grid.onGridUpdate = (visibleCells, offsetX, offsetY) => {
-			this.threeApp.updateGridItems(visibleCells, offsetX, offsetY);
-		};
 	}
 }
 

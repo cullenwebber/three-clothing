@@ -42,8 +42,11 @@ class BarrelDistortionPass extends Pass {
 					vec2 toCenter = vUv - 0.5;
 					float dist = length(toCenter);
 
+					// Red channel gets more distortion (further out)
 					vec2 uvR = pincushionDistortion(vUv, uStrength + uChromaticAberration * dist);
+					// Green channel gets normal distortion
 					vec2 uvG = pincushionDistortion(vUv, uStrength);
+					// Blue channel gets less distortion (pulled in)
 					vec2 uvB = pincushionDistortion(vUv, uStrength - uChromaticAberration * dist);
 
 					// Sample each channel separately

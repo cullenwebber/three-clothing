@@ -1,18 +1,13 @@
 import * as THREE from "three";
+import TrackedObject from "./TrackedObject.js";
 
-class BorderPlane {
+class BorderPlane extends TrackedObject {
 	constructor(scene, camera, element, container = null, config = {}) {
-		this.scene = scene;
-		this.camera = camera;
-		this.element = element;
-		this.container = container;
-
-		this.config = {
-			zPosition: config.zPosition || 0,
-			borderWidth: config.borderWidth || 0.5, // pixels
-			borderColor: config.borderColor || 0x000000,
+		super(scene, camera, element, container, {
+			borderWidth: 0.5,
+			borderColor: 0x000000,
 			...config,
-		};
+		});
 
 		this.createPlane();
 		this.scene.add(this.mesh);
@@ -21,9 +16,12 @@ class BorderPlane {
 
 	createPlane() {
 		const geometry = new THREE.PlaneGeometry(1, 1);
+		const material = this.createMaterial();
+		this.mesh = new THREE.Mesh(geometry, material);
+	}
 
-		// Shader material for border
-		const material = new THREE.ShaderMaterial({
+	createMaterial() {
+		return new THREE.ShaderMaterial({
 			transparent: true,
 			uniforms: {
 				uBorderWidth: { value: this.config.borderWidth },
@@ -62,8 +60,6 @@ class BorderPlane {
 				}
 			`,
 		});
-
-		this.mesh = new THREE.Mesh(geometry, material);
 	}
 
 	updatePosition() {
@@ -74,77 +70,17 @@ class BorderPlane {
 
 		this.mesh.visible = true;
 
-		const rect = this.element.getBoundingClientRect();
-		const containerRect = this.getContainerRect();
+		const rect = this.getElementRect();
+		const { worldX, worldY } = this.getWorldPosition();
 
-		// Calculate center position relative to container
-		const centerX = rect.left + rect.width / 2 - containerRect.left;
-		const centerY = rect.top + rect.height / 2 - containerRect.top;
-
-		// Convert to NDC coordinates
-		const ndcX = (centerX / containerRect.width) * 2 - 1;
-		const ndcY = -((centerY / containerRect.height) * 2 - 1);
-
-		// Convert to world coordinates
-		const { width: frustumWidth, height: frustumHeight } =
-			this.getFrustumDimensions(this.config.zPosition);
-		const worldX = ndcX * (frustumWidth / 2);
-		const worldY = ndcY * (frustumHeight / 2);
-
-		// Convert element size to world units
 		const worldSize = this.getWorldSizeFromPixels({
 			width: rect.width,
 			height: rect.height,
 		});
 
-		// Update plane scale to match element size
 		this.mesh.scale.set(worldSize.width, worldSize.height, 1);
-
-		// Update resolution uniform for pixel-perfect border
 		this.mesh.material.uniforms.uResolution.value.set(rect.width, rect.height);
-
-		// Set position
 		this.mesh.position.set(worldX, worldY, this.config.zPosition);
-	}
-
-	getFrustumDimensions(zPosition = 0) {
-		const distance = Math.abs(this.camera.position.z - zPosition);
-		const fov = this.camera.fov * (Math.PI / 180);
-		const aspect = this.camera.aspect;
-		const height = 2 * Math.tan(fov / 2) * distance;
-		const width = height * aspect;
-		return { width, height };
-	}
-
-	getWorldSizeFromPixels(options) {
-		const containerRect = this.getContainerRect();
-		const { width: frustumWidth, height: frustumHeight } =
-			this.getFrustumDimensions(this.config.zPosition);
-		const result = {};
-
-		if (options.width !== undefined) {
-			const worldUnitsPerPixel = frustumWidth / containerRect.width;
-			result.width = options.width * worldUnitsPerPixel;
-		}
-
-		if (options.height !== undefined) {
-			const worldUnitsPerPixel = frustumHeight / containerRect.height;
-			result.height = options.height * worldUnitsPerPixel;
-		}
-
-		return result;
-	}
-
-	getContainerRect() {
-		if (this.container) {
-			return this.container.getBoundingClientRect();
-		}
-		return {
-			left: 0,
-			top: 0,
-			width: window.innerWidth,
-			height: window.innerHeight,
-		};
 	}
 }
 
