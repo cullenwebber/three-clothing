@@ -14,10 +14,7 @@ class WebGLText extends TrackedObject {
 		this.createMesh();
 		this.scene.add(this.mesh);
 		this.updateText();
-
-		if (this.config.hideOriginal) {
-			this.element.style.opacity = 0;
-		}
+		this.element.style.opacity = this.config.hideOriginal ? 0 : 1;
 	}
 
 	createMesh() {
@@ -65,11 +62,6 @@ class WebGLText extends TrackedObject {
 
 		this.mesh.visible = true;
 
-		const currentText = this.element.innerText;
-		if (this.mesh.text !== currentText) {
-			this.mesh.text = currentText;
-		}
-
 		const rect = this.getElementRect();
 		const containerRect = this.getContainerRect();
 
@@ -87,19 +79,6 @@ class WebGLText extends TrackedObject {
 
 		this.mesh.position.set(worldX, worldY, this.config.zPosition);
 		this.mesh.sync();
-	}
-
-	dispose() {
-		this.scene.remove(this.mesh);
-		if (this.mesh.dispose) {
-			this.mesh.dispose();
-		}
-		if (this.mesh.material && this.mesh.material.dispose) {
-			this.mesh.material.dispose();
-		}
-		if (this.config.hideOriginal && this.element) {
-			this.element.style.opacity = "";
-		}
 	}
 }
 

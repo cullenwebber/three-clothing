@@ -1,8 +1,9 @@
 import ThreeScene from "./ThreeScene.js";
 import ThreeCamera from "./ThreeCamera.js";
 import ThreeRenderer from "./ThreeRenderer.js";
-import ThreePostprocessing from "./ThreePostprocessing.js";
-import GridObject from "./GridObject.js";
+import ThreePostprocessing from "../postprocessing/ThreePostprocessing.js";
+import GridObject from "../objects/GridObject.js";
+import EventManager from "../utils/EventManager.js";
 
 class ThreeApp {
 	constructor() {
@@ -11,11 +12,11 @@ class ThreeApp {
 		this.camera = new ThreeCamera();
 		this.renderer = new ThreeRenderer(this.canvas);
 		this.postprocessing = null;
-		this.isRunning = false;
 		this.gridObject = null;
+		this.eventManager = new EventManager();
 	}
 
-	init() {
+	init(gridRenderer) {
 		this.scene.init();
 		this.camera.init();
 		this.renderer.init();
@@ -23,40 +24,34 @@ class ThreeApp {
 		this.postprocessing = new ThreePostprocessing(this.renderer.getRenderer());
 		this.postprocessing.init(this.scene.getScene(), this.camera.getCamera());
 
-		this.createScene();
+		this.createScene(gridRenderer);
 		this.resize();
 		this.animate();
 	}
 
-	createScene() {
-		const gridContainer = document.querySelector("#grid");
-		this.gridObject = new GridObject(this.scene, this.camera, gridContainer);
-	}
-
-	resize() {
-		window.addEventListener("resize", () => {
-			this.camera.updateAspectRatio(window.innerWidth, window.innerHeight);
-			this.renderer.handleResize();
-			if (this.postprocessing) {
-				this.postprocessing.handleResize();
-			}
-		});
+	createScene(gridRenderer) {
+		this.gridObject = new GridObject(
+			this.scene,
+			this.camera,
+			document.querySelector("#grid"),
+			gridRenderer
+		);
 	}
 
 	animate() {
 		requestAnimationFrame(() => this.animate());
-
-		if (this.gridObject) {
-			this.gridObject.update();
-		}
-
+		this.gridObject.update();
 		this.camera.update();
+		this.postprocessing.update();
+		this.postprocessing.render();
+	}
 
-		if (this.postprocessing) {
-			this.postprocessing.render();
-		} else {
-			this.renderer.render(this.scene.getScene(), this.camera.getCamera());
-		}
+	resize() {
+		this.eventManager.add(window, "resize", () => {
+			this.camera.updateAspectRatio(window.innerWidth, window.innerHeight);
+			this.renderer.handleResize();
+			this.postprocessing.handleResize();
+		});
 	}
 }
 

@@ -5,12 +5,41 @@
 		<link rel="icon" type="image/svg+xml" href="/vite.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="stylesheet" href="/src/style.css" />
-		<title>Three Clothing Demo</title>
+		<title>YZY</title>
 	</head>
 	<body>
+		<header class="fixed top-0 left-0 w-full z-20 p-8 flex justify-end">
+			<svg
+				class="size-6"
+				aria-hidden="true"
+				viewBox="0 0 24 24"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<rect
+					x="6"
+					y="8"
+					width="12"
+					height="10"
+					rx="2"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+				></rect>
+				<path
+					d="M9 7V7C9 5.34315 10.3431 4 12 4V4C13.6569 4 15 5.34315 15 7V7"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+				></path>
+			</svg>
+		</header>
 		<div id="app">
 			<canvas id="three-canvas" class="fixed inset-0 w-screen h-lvh"></canvas>
-			<div id="grid" class="h-lvh w-screen overflow-hidden relative absolute inset-0 pointer-events-auto"></div>
+			<div
+				id="grid"
+				class="h-lvh w-screen overflow-hidden relative inset-0 pointer-events-auto"
+			></div>
 		</div>
 		<script type="module" src="/src/main.js"></script>
 	</body>

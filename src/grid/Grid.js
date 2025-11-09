@@ -1,10 +1,11 @@
 import GridRenderer from "./GridRenderer.js";
 import MathUtils from "../utils/Math.js";
+import EventManager from "../three/utils/EventManager.js";
 
 class Grid {
 	constructor() {
 		this.gridContainer = document.querySelector("#grid");
-		this.renderer = new GridRenderer(this.gridContainer, 400);
+		this.renderer = new GridRenderer(this.gridContainer, 500);
 
 		// Position
 		this.offsetX = 0;
@@ -31,6 +32,12 @@ class Grid {
 		// Damping
 		this.mathUtils = new MathUtils();
 		this.dampingLambda = 5; // Higher = faster response (try 5-20)
+
+		// Event management
+		this.eventManager = new EventManager();
+
+		// Callbacks
+		this.onDragStateChange = null;
 	}
 
 	init() {
@@ -40,16 +47,20 @@ class Grid {
 	}
 
 	setupEventListeners() {
-		this.gridContainer.addEventListener("mousedown", (e) => this.startDrag(e));
-		document.addEventListener("mousemove", (e) => this.drag(e));
-		document.addEventListener("mouseup", () => this.endDrag());
+		this.eventManager.add(this.gridContainer, "mousedown", (e) =>
+			this.startDrag(e)
+		);
+		this.eventManager.add(document, "mousemove", (e) => this.drag(e));
+		this.eventManager.add(document, "mouseup", () => this.endDrag());
 
-		this.gridContainer.addEventListener(
+		this.eventManager.add(
+			this.gridContainer,
 			"touchstart",
 			(e) => this.startDrag(e.touches[0]),
 			{ passive: false }
 		);
-		document.addEventListener(
+		this.eventManager.add(
+			document,
 			"touchmove",
 			(e) => {
 				if (this.isDragging) {
@@ -59,9 +70,9 @@ class Grid {
 			},
 			{ passive: false }
 		);
-		document.addEventListener("touchend", () => this.endDrag());
+		this.eventManager.add(document, "touchend", () => this.endDrag());
 
-		window.addEventListener("resize", () => this.updateGrid());
+		this.eventManager.add(window, "resize", () => this.updateGrid());
 	}
 
 	startDrag(e) {
@@ -73,6 +84,10 @@ class Grid {
 		this.lastTime = performance.now();
 
 		this.gridContainer.style.cursor = "grabbing";
+
+		if (this.onDragStateChange) {
+			this.onDragStateChange(true);
+		}
 	}
 
 	drag(e) {
@@ -110,6 +125,10 @@ class Grid {
 		// Reset velocity when drag ends
 		this.velocityX = 0;
 		this.velocityY = 0;
+
+		if (this.onDragStateChange) {
+			this.onDragStateChange(false);
+		}
 	}
 
 	stopAnimation() {
@@ -129,7 +148,7 @@ class Grid {
 			const dt = Math.min((now - this.lastFrameTime) / 1000, 0.1); // Cap dt to prevent huge jumps
 			this.lastFrameTime = now;
 
-			const lambda = this.isDragging ? 10 : this.dampingLambda;
+			const lambda = this.isDragging ? 5 : this.dampingLambda;
 
 			this.offsetX = this.mathUtils.damp(
 				this.offsetX,
@@ -155,6 +174,19 @@ class Grid {
 
 	updateGrid() {
 		this.renderer.updateVisibleCells(this.offsetX, this.offsetY);
+	}
+
+	dispose() {
+		// Cancel animation frame
+		if (this.animationRAF) {
+			cancelAnimationFrame(this.animationRAF);
+		}
+
+		// Clean up event listeners
+		this.eventManager.dispose();
+
+		// Clear renderer
+		this.renderer.clear();
 	}
 }
 

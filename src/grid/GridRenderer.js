@@ -6,8 +6,13 @@ class GridRenderer {
 		// Fixed pool of cells
 		this.cells = [];
 		this.visibleCells = new Set();
+		this.focusedCell = null;
 
 		this.initializeCells();
+	}
+
+	setFocusedCell(cellElement) {
+		this.focusedCell = cellElement;
 	}
 
 	initializeCells() {
@@ -87,8 +92,8 @@ class GridRenderer {
 				cell.dataset.gridKey = key;
 			}
 
-			// Update position for all visible cells
-			if (cell) {
+			// Update position for all visible cells (skip focused cell)
+			if (cell && cell !== this.focusedCell) {
 				const x = col * this.cellSize + offsetX;
 				const y = row * this.cellSize + offsetY;
 				cell.style.transform = `translate(${x}px, ${y}px)`;

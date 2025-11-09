@@ -1,5 +1,5 @@
 import Grid from "./grid/Grid.js";
-import ThreeApp from "./three/ThreeApp.js";
+import ThreeApp from "./three/core/ThreeApp.js";
 
 class App {
 	constructor() {
@@ -8,10 +8,12 @@ class App {
 	}
 
 	init() {
-		this.threeApp.init();
 		this.grid.init();
+		this.threeApp.init(this.grid.renderer);
 	}
 }
 
-const app = new App();
-app.init();
+document.addEventListener("DOMContentLoaded", () => {
+	const app = new App();
+	app.init();
+});

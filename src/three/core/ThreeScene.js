@@ -4,7 +4,6 @@ import { RoomEnvironment } from "three/examples/jsm/Addons.js";
 class ThreeScene {
 	constructor() {
 		this.scene = new THREE.Scene();
-		this.clock = new THREE.Clock();
 		this.objects = [];
 	}
 
@@ -18,7 +17,7 @@ class ThreeScene {
 			new RoomEnvironment(),
 			0.01
 		).texture;
-		this.scene.environmentIntensity = 0.7;
+		this.scene.environmentIntensity = 1.0;
 		pmremGenerator.dispose();
 	}
 
