@@ -7,11 +7,11 @@ class MathUtils {
 	 * @param dt - Delta time in seconds
 	 * @returns Interpolated value between current and target
 	 */
-	damp(current, target, lambda, dt) {
+	static damp(current, target, lambda, dt) {
 		return this.lerp(current, target, 1 - Math.exp(-lambda * dt));
 	}
 
-	lerp(a, b, t) {
+	static lerp(a, b, t) {
 		return a * (1 - t) + b * t;
 	}
 }

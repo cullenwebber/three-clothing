@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { WiggleBone } from "wiggle";
+import MathUtils from "../../utils/Math";
+import gsap from "gsap";
 
 class WiggleObj {
 	constructor(scene) {
@@ -14,25 +16,25 @@ class WiggleObj {
 
 		// Rotation state
 		this.isHovered = false;
-		this.rotationSpeed = 0.02;
+		this.rotationSpeed = 0.025;
 		this.targetRotationY = 0;
 		this.currentRotationY = 0;
-		this.rotationDampingLambda = 8; // Higher = faster return to original position
-
+		this.rotationDampingLambda = 5;
+		this.configureLoader();
 		this.load();
 	}
 
-	load() {
-		const loader = new GLTFLoader();
-
-		// Setup Draco loader
+	configureLoader() {
+		this.loader = new GLTFLoader();
 		const dracoLoader = new DRACOLoader();
 		dracoLoader.setDecoderPath(
 			"https://www.gstatic.com/draco/versioned/decoders/1.5.6/"
 		);
-		loader.setDRACOLoader(dracoLoader);
+		this.loader.setDRACOLoader(dracoLoader);
+	}
 
-		loader.load("/hoodie.glb", (gltf) => {
+	load() {
+		this.loader.load("/hoodie.glb", (gltf) => {
 			gltf.scene.traverse((child) => {
 				if (!child.isMesh) return;
 				child.material = this.material;
@@ -49,10 +51,16 @@ class WiggleObj {
 			this.rootBone = gltf.scene.getObjectByName("Root");
 
 			const b1 = gltf.scene.getObjectByName("Bone1");
+			const b2 = gltf.scene.getObjectByName("Bone2");
+
+			const velocity = 0.3;
 
 			this.wiggleBones.push(
 				new WiggleBone(b1, {
-					velocity: 0.4,
+					velocity,
+				}),
+				new WiggleBone(b2, {
+					velocity,
 				})
 			);
 
@@ -62,13 +70,13 @@ class WiggleObj {
 
 	getMaterial() {
 		// Generate random greyscale color
-		const greyValue = Math.random() > 0.5 ? 0.025 : 0.45;
+		const greyValue = Math.random() > 0.5 ? 0.03 : 0.5;
 		const greyColor = new THREE.Color(greyValue, greyValue, greyValue);
 
 		return new THREE.MeshStandardMaterial({
 			color: greyColor,
-			metalness: 0.1,
-			roughness: 1.0,
+			metalness: 0,
+			roughness: 1,
 			side: THREE.DoubleSide,
 		});
 	}
@@ -78,12 +86,10 @@ class WiggleObj {
 
 		this.wiggleBones.forEach((wb) => wb.update());
 
-		// Rotate on hover
 		if (this.isHovered) {
 			this.currentRotationY += this.rotationSpeed;
 		} else {
-			// Smooth damping back to original position (0)
-			this.currentRotationY = this.damp(
+			this.currentRotationY = MathUtils.damp(
 				this.currentRotationY,
 				this.targetRotationY,
 				this.rotationDampingLambda,
@@ -92,10 +98,6 @@ class WiggleObj {
 		}
 
 		this.group.rotation.y = this.currentRotationY;
-	}
-
-	damp(current, target, lambda, dt) {
-		return current + (target - current) * (1 - Math.exp(-lambda * dt));
 	}
 
 	setTargetPosition(x, y) {
@@ -108,6 +110,27 @@ class WiggleObj {
 
 	getGroup() {
 		return this.group;
+	}
+
+	fadeOut() {
+		gsap.to(this.group.scale, {
+			x: 0.00001,
+			y: 0.00001,
+			z: 0.00001,
+			duration: 0.5,
+			ease: "power1.inOut",
+		});
+	}
+
+	fadeIn() {
+		gsap.to(this.group.scale, {
+			delay: 0.25,
+			x: 1,
+			y: 1,
+			z: 1,
+			duration: 0.5,
+			ease: "power1.inOut",
+		});
 	}
 }
 

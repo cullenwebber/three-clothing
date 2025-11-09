@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Text } from "troika-three-text";
 import TrackedObject from "./TrackedObject.js";
+import gsap from "gsap";
 
 class WebGLText extends TrackedObject {
 	constructor(scene, camera, element, container = null, config = {}) {
@@ -36,7 +37,6 @@ class WebGLText extends TrackedObject {
 			});
 		}
 
-		// Make text thicker/bolder
 		this.mesh.outlineWidth = 0.0015;
 		this.mesh.outlineColor = new THREE.Color(
 			window.getComputedStyle(this.element).color
@@ -79,6 +79,23 @@ class WebGLText extends TrackedObject {
 
 		this.mesh.position.set(worldX, worldY, this.config.zPosition);
 		this.mesh.sync();
+	}
+
+	fadeOut() {
+		gsap.to(this.mesh.material, {
+			opacity: 0,
+			duration: 0.5,
+			ease: "power2.out",
+		});
+	}
+
+	fadeIn() {
+		gsap.to(this.mesh.material, {
+			delay: 0.75,
+			opacity: 1,
+			duration: 0.5,
+			ease: "power2.in",
+		});
 	}
 }
 

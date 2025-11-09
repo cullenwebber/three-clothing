@@ -2,6 +2,8 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import BarrelDistortionPass from "./BarrelDistortionPass.js";
+import MathUtils from "../../utils/Math.js";
+import EventManager from "../utils/EventManager.js";
 
 class ThreePostprocessing {
 	constructor(renderer) {
@@ -11,8 +13,7 @@ class ThreePostprocessing {
 
 		// Distortion state
 		this.isDragging = false;
-		this.currentDistortion = 0.4;
-		this.targetDistortion = 0.4;
+
 		this.currentChromaticAberration = 0.02;
 		this.targetChromaticAberration = 0.02;
 		this.distortionLambda = 8;
@@ -20,17 +21,21 @@ class ThreePostprocessing {
 
 		// Distortion values
 		this.dragDistortion = 1.6;
-		this.idleDistortion = 0.4;
+		this.idleDistortion = 0.6;
+		this.currentDistortion = this.idleDistortion;
+		this.targetDistortion = this.idleDistortion;
 		this.dragChromaticAberration = 0.06;
 		this.idleChromaticAberration = 0.02;
+
+		// Event manager
+		this.eventManager = new EventManager();
+		this.setupDragListeners();
 	}
 
 	init(scene, camera) {
 		this.composer = new EffectComposer(this.renderer);
 
 		const renderPass = new RenderPass(scene, camera);
-
-		// Barrel distortion with chromatic aberration - start with idle values
 		const barrelDistortionPass = new BarrelDistortionPass(
 			this.idleDistortion,
 			this.idleChromaticAberration
@@ -48,6 +53,27 @@ class ThreePostprocessing {
 		this.passes.output = outputPass;
 	}
 
+	setupDragListeners() {
+		const gridContainer = document.querySelector("#grid");
+		if (!gridContainer) return;
+
+		this.eventManager.add(gridContainer, "mousedown", () => {
+			this.setDragging(true);
+		});
+
+		this.eventManager.add(document, "mouseup", () => {
+			this.setDragging(false);
+		});
+
+		this.eventManager.add(gridContainer, "touchstart", () => {
+			this.setDragging(true);
+		});
+
+		this.eventManager.add(document, "touchend", () => {
+			this.setDragging(false);
+		});
+	}
+
 	setDragging(isDragging) {
 		this.isDragging = isDragging;
 		this.targetDistortion = isDragging
@@ -63,25 +89,24 @@ class ThreePostprocessing {
 		const dt = Math.min((now - this.lastDistortionTime) / 1000, 0.1);
 		this.lastDistortionTime = now;
 
-		// Smooth damping for both effects
-		const dampFactor = 1 - Math.exp(-this.distortionLambda * dt);
+		this.currentDistortion = MathUtils.damp(
+			this.currentDistortion,
+			this.targetDistortion,
+			this.distortionLambda,
+			dt
+		);
 
-		this.currentDistortion =
-			this.currentDistortion +
-			(this.targetDistortion - this.currentDistortion) * dampFactor;
+		this.currentChromaticAberration = MathUtils.damp(
+			this.currentChromaticAberration,
+			this.targetChromaticAberration,
+			this.distortionLambda,
+			dt
+		);
 
-		this.currentChromaticAberration =
-			this.currentChromaticAberration +
-			(this.targetChromaticAberration - this.currentChromaticAberration) *
-				dampFactor;
-
-		// Update the barrel distortion pass
-		if (this.passes.barrelDistortion) {
-			this.passes.barrelDistortion.uniforms.uStrength.value =
-				this.currentDistortion;
-			this.passes.barrelDistortion.uniforms.uChromaticAberration.value =
-				this.currentChromaticAberration;
-		}
+		this.passes.barrelDistortion.uniforms.uStrength.value =
+			this.currentDistortion;
+		this.passes.barrelDistortion.uniforms.uChromaticAberration.value =
+			this.currentChromaticAberration;
 	}
 
 	render() {
@@ -100,6 +125,10 @@ class ThreePostprocessing {
 
 	getPass(name) {
 		return this.passes[name];
+	}
+
+	dispose() {
+		this.eventManager.dispose();
 	}
 }
 

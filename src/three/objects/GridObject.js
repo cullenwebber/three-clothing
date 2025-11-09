@@ -24,6 +24,7 @@ class GridObject {
 
 		this.eventManager = new EventManager();
 		this.focusMode = new FocusMode(container, gridRenderer);
+		this.focusMode.setGridObject(this);
 	}
 
 	initialise() {
@@ -146,6 +147,46 @@ class GridObject {
 			const instance = this.borderInstances.get(element);
 
 			instance.updatePosition();
+		});
+	}
+
+	fadeOutAllExcept(cellElement) {
+		// Fade out all wiggle objects except the focused one
+		for (const [cellId, tracked] of this.wiggleObjects.entries()) {
+			if (tracked.cellElement !== cellElement) {
+				tracked.wiggleObj.fadeOut();
+			}
+		}
+
+		// Fade out all text instances except those in the focused cell
+		this.textInstances.forEach((instance, element) => {
+			if (!cellElement.contains(element)) {
+				instance.fadeOut();
+			}
+		});
+
+		// Fade out all border instances except the focused cell
+		this.borderInstances.forEach((instance, element) => {
+			if (element !== cellElement) {
+				instance.fadeOut();
+			}
+		});
+	}
+
+	fadeInAll() {
+		// Fade in all wiggle objects
+		for (const tracked of this.wiggleObjects.values()) {
+			tracked.wiggleObj.fadeIn();
+		}
+
+		// Fade in all text instances
+		this.textInstances.forEach((instance) => {
+			instance.fadeIn();
+		});
+
+		// Fade in all border instances
+		this.borderInstances.forEach((instance) => {
+			instance.fadeIn();
 		});
 	}
 }

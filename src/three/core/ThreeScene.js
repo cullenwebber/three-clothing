@@ -17,7 +17,7 @@ class ThreeScene {
 			new RoomEnvironment(),
 			0.01
 		).texture;
-		this.scene.environmentIntensity = 1.0;
+		this.scene.environmentIntensity = 0.75;
 		pmremGenerator.dispose();
 	}
 

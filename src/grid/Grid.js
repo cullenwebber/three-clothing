@@ -28,10 +28,7 @@ class Grid {
 		// Animation
 		this.animationRAF = null;
 		this.lastFrameTime = performance.now();
-
-		// Damping
-		this.mathUtils = new MathUtils();
-		this.dampingLambda = 5; // Higher = faster response (try 5-20)
+		this.dampingLambda = 5;
 
 		// Event management
 		this.eventManager = new EventManager();
@@ -145,22 +142,20 @@ class Grid {
 	startRenderLoop() {
 		const render = () => {
 			const now = performance.now();
-			const dt = Math.min((now - this.lastFrameTime) / 1000, 0.1); // Cap dt to prevent huge jumps
+			const dt = Math.min((now - this.lastFrameTime) / 1000, 0.1);
 			this.lastFrameTime = now;
 
-			const lambda = this.isDragging ? 5 : this.dampingLambda;
-
-			this.offsetX = this.mathUtils.damp(
+			this.offsetX = MathUtils.damp(
 				this.offsetX,
 				this.targetOffsetX,
-				lambda,
+				this.dampingLambda,
 				dt
 			);
 
-			this.offsetY = this.mathUtils.damp(
+			this.offsetY = MathUtils.damp(
 				this.offsetY,
 				this.targetOffsetY,
-				lambda,
+				this.dampingLambda,
 				dt
 			);
 
@@ -174,19 +169,6 @@ class Grid {
 
 	updateGrid() {
 		this.renderer.updateVisibleCells(this.offsetX, this.offsetY);
-	}
-
-	dispose() {
-		// Cancel animation frame
-		if (this.animationRAF) {
-			cancelAnimationFrame(this.animationRAF);
-		}
-
-		// Clean up event listeners
-		this.eventManager.dispose();
-
-		// Clear renderer
-		this.renderer.clear();
 	}
 }
 

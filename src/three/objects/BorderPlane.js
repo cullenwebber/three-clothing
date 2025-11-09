@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import TrackedObject from "./TrackedObject.js";
+import gsap from "gsap";
 
 class BorderPlane extends TrackedObject {
 	constructor(scene, camera, element, container = null, config = {}) {
@@ -27,6 +28,7 @@ class BorderPlane extends TrackedObject {
 				uBorderWidth: { value: this.config.borderWidth },
 				uBorderColor: { value: new THREE.Color(this.config.borderColor) },
 				uResolution: { value: new THREE.Vector2(1, 1) },
+				uOpacity: { value: 1.0 },
 			},
 			vertexShader: /*glsl*/ `
 				varying vec2 vUv;
@@ -40,6 +42,7 @@ class BorderPlane extends TrackedObject {
 				uniform vec3 uBorderColor;
 				uniform float uBorderWidth;
 				uniform vec2 uResolution;
+				uniform float uOpacity;
 
 				varying vec2 vUv;
 
@@ -55,8 +58,11 @@ class BorderPlane extends TrackedObject {
 					float isBottomBorder = step(vUv.y, borderY);
 
 					float border = max(max(isLeftBorder, isRightBorder), max(isTopBorder, isBottomBorder));
+					float alpha = border * uOpacity;
 
-					gl_FragColor = vec4(uBorderColor, border);
+					if (alpha < 0.01) discard;
+
+					gl_FragColor = vec4(uBorderColor, alpha);
 				}
 			`,
 		});
@@ -81,6 +87,24 @@ class BorderPlane extends TrackedObject {
 		this.mesh.scale.set(worldSize.width, worldSize.height, 1);
 		this.mesh.material.uniforms.uResolution.value.set(rect.width, rect.height);
 		this.mesh.position.set(worldX, worldY, this.config.zPosition);
+	}
+
+	fadeOut() {
+		gsap.to(this.mesh.material.uniforms.uOpacity, {
+			value: 0.0,
+			duration: 0.5,
+			ease: "power2.out",
+		});
+	}
+
+	fadeIn() {
+		const targetColor = new THREE.Color(this.config.borderColor);
+		gsap.to(this.mesh.material.uniforms.uOpacity, {
+			delay: 0.5,
+			value: 1.0,
+			duration: 0.5,
+			ease: "power2.in",
+		});
 	}
 }
 

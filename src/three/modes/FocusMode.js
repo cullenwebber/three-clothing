@@ -5,12 +5,18 @@ import EventManager from "../utils/EventManager.js";
 gsap.registerPlugin(Flip);
 
 class FocusMode {
-	constructor(gridContainer, gridRenderer) {
+	constructor(gridContainer, gridRenderer, gridObject = null) {
 		this.gridContainer = gridContainer;
 		this.gridRenderer = gridRenderer;
+		this.gridObject = gridObject;
 		this.focusedCell = null;
+		this.originalTransform = null;
 		this.eventManager = new EventManager();
 		this.setupEscapeListener();
+	}
+
+	setGridObject(gridObject) {
+		this.gridObject = gridObject;
 	}
 
 	setupEscapeListener() {
@@ -35,8 +41,15 @@ class FocusMode {
 		this.focusedCell = cellElement;
 		this.gridRenderer.setFocusedCell(cellElement);
 
+		this.originalTransform = cellElement.style.transform;
+
 		const textElement = cellElement.querySelector(".grid-item-text");
 		const state = Flip.getState(cellElement);
+
+		// Fade out all other 3D objects
+		if (this.gridObject) {
+			this.gridObject.fadeOutAllExcept(cellElement);
+		}
 
 		gsap.set(cellElement, {
 			position: "fixed",
@@ -49,14 +62,16 @@ class FocusMode {
 		});
 
 		Flip.from(state, {
-			duration: 0.8,
+			delay: 0.3,
+			duration: 0.6,
 			ease: "power2.inOut",
 			absolute: true,
 		});
 
 		gsap.to(textElement, {
-			y: "-4rem",
-			duration: 0.8,
+			delay: 0.3,
+			y: "-8rem",
+			duration: 0.6,
 			ease: "power2.inOut",
 		});
 	}
@@ -68,29 +83,38 @@ class FocusMode {
 		const textElement = cellElement.querySelector(".grid-item-text");
 		const state = Flip.getState(cellElement);
 
-		cellElement.style.position = "";
-		cellElement.style.top = "";
-		cellElement.style.left = "";
-		cellElement.style.width = `${this.gridRenderer.cellSize}px`;
-		cellElement.style.height = `${this.gridRenderer.cellSize}px`;
-		cellElement.style.transform = "";
-		cellElement.style.zIndex = "";
+		// Fade in all other 3D objects
+		if (this.gridObject) {
+			this.gridObject.fadeInAll();
+		}
 
-		this.gridRenderer.setFocusedCell(null);
+		gsap.set(this.focusedCell, {
+			position: "",
+			top: "",
+			left: "",
+			width: `${this.gridRenderer.cellSize}px`,
+			height: `${this.gridRenderer.cellSize}px`,
+			transform: this.originalTransform,
+			zIndex: "",
+		});
 
 		Flip.from(state, {
-			duration: 0.8,
+			duration: 0.6,
 			ease: "power2.inOut",
 			absolute: true,
+			onComplete: () => {
+				this.gridRenderer.setFocusedCell(null);
+			},
 		});
 
 		gsap.to(textElement, {
 			y: 0,
-			duration: 0.8,
+			duration: 0.6,
 			ease: "power2.inOut",
 		});
 
 		this.focusedCell = null;
+		this.originalTransform = null;
 	}
 
 	isFocused(cellId) {

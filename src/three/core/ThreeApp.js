@@ -7,13 +7,12 @@ import EventManager from "../utils/EventManager.js";
 
 class ThreeApp {
 	constructor() {
-		this.canvas = document.querySelector("#three-canvas");
 		this.scene = new ThreeScene();
 		this.camera = new ThreeCamera();
-		this.renderer = new ThreeRenderer(this.canvas);
+		this.renderer = new ThreeRenderer(document.querySelector("#three-canvas"));
+		this.eventManager = new EventManager();
 		this.postprocessing = null;
 		this.gridObject = null;
-		this.eventManager = new EventManager();
 	}
 
 	init(gridRenderer) {
@@ -24,12 +23,12 @@ class ThreeApp {
 		this.postprocessing = new ThreePostprocessing(this.renderer.getRenderer());
 		this.postprocessing.init(this.scene.getScene(), this.camera.getCamera());
 
-		this.createScene(gridRenderer);
+		this.addObjects(gridRenderer);
 		this.resize();
 		this.animate();
 	}
 
-	createScene(gridRenderer) {
+	addObjects(gridRenderer) {
 		this.gridObject = new GridObject(
 			this.scene,
 			this.camera,
